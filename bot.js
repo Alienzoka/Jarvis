@@ -454,3 +454,15 @@ iniciarBot().catch((erro) => {
 });
 
 "qrcode": "^1.5.4"
+
+🎲 BOT DE DADOS
+
+WhatsApp
+┌──────────────┐
+│              │
+│   QR CODE    │
+│              │
+└──────────────┘
+
+Escaneie este QR Code
+pelo WhatsApp
