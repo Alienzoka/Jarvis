@@ -452,3 +452,5 @@ iniciarBot().catch((erro) => {
 
     process.exit(1);
 });
+
+"qrcode": "^1.5.4"
