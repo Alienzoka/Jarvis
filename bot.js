@@ -1,4 +1,5 @@
-const {
+
+      const {
     default: makeWASocket,
     useMultiFileAuthState,
     DisconnectReason
@@ -7,6 +8,7 @@ const {
 const P = require("pino");
 const express = require("express");
 const crypto = require("crypto");
+const QRCode = require("qrcode");
 
 // =====================================================
 // CONFIGURAÇÕES
@@ -19,29 +21,283 @@ const MAX_MODIFICADOR = 1000;
 
 const DADOS_PERMITIDOS = [6, 12, 20, 100];
 
+// Guarda o QR atual
+let qrAtual = null;
+
+// Estado do WhatsApp
+let whatsappConectado = false;
+
 // =====================================================
-// SERVIDOR HTTP
+// SERVIDOR WEB
 // =====================================================
 
 const app = express();
 
-app.get("/", (req, res) => {
-    res.status(200).send(
-        "🎲 Bot de dados do WhatsApp está online!"
-    );
+app.get("/", async (req, res) => {
+
+    if (whatsappConectado) {
+
+        res.send(`
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+
+                <meta http-equiv="refresh" content="10">
+
+                <title>🎲 Bot de Dados</title>
+
+                <style>
+                    body {
+                        background: #111;
+                        color: white;
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 40px 20px;
+                    }
+
+                    .box {
+                        max-width: 500px;
+                        margin: auto;
+                        padding: 30px;
+                        background: #1e1e1e;
+                        border-radius: 20px;
+                    }
+
+                    h1 {
+                        font-size: 30px;
+                    }
+
+                    .online {
+                        color: #00ff88;
+                        font-size: 20px;
+                        font-weight: bold;
+                    }
+                </style>
+            </head>
+
+            <body>
+
+                <div class="box">
+
+                    <h1>🎲 Bot de Dados</h1>
+
+                    <p class="online">
+                        🟢 WhatsApp conectado!
+                    </p>
+
+                    <p>
+                        O bot está funcionando normalmente.
+                    </p>
+
+                    <p>
+                        🎲 #d6<br>
+                        🎲 #d12<br>
+                        🎲 #d20<br>
+                        🎲 #d100
+                    </p>
+
+                </div>
+
+            </body>
+            </html>
+        `);
+
+        return;
+    }
+
+    if (!qrAtual) {
+
+        res.send(`
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport"
+                      content="width=device-width, initial-scale=1.0">
+
+                <meta http-equiv="refresh" content="5">
+
+                <title>🎲 Bot de Dados</title>
+
+                <style>
+                    body {
+                        background: #111;
+                        color: white;
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 40px 20px;
+                    }
+
+                    .box {
+                        max-width: 500px;
+                        margin: auto;
+                        padding: 30px;
+                        background: #1e1e1e;
+                        border-radius: 20px;
+                    }
+
+                    .loading {
+                        font-size: 20px;
+                    }
+                </style>
+
+            </head>
+
+            <body>
+
+                <div class="box">
+
+                    <h1>🎲 Bot de Dados</h1>
+
+                    <p class="loading">
+                        ⏳ Aguardando QR Code...
+                    </p>
+
+                    <p>
+                        Atualize a página em alguns segundos.
+                    </p>
+
+                </div>
+
+            </body>
+            </html>
+        `);
+
+        return;
+    }
+
+    res.send(`
+        <!DOCTYPE html>
+
+        <html lang="pt-BR">
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <meta http-equiv="refresh" content="5">
+
+            <title>🎲 Conectar WhatsApp</title>
+
+            <style>
+
+                body {
+                    background: #111;
+                    color: white;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    padding: 25px 15px;
+                }
+
+                .box {
+                    max-width: 500px;
+                    margin: auto;
+                    padding: 25px;
+                    background: #1e1e1e;
+                    border-radius: 20px;
+                }
+
+                h1 {
+                    font-size: 28px;
+                }
+
+                .qr {
+                    background: white;
+                    padding: 15px;
+                    border-radius: 15px;
+                    display: inline-block;
+                    margin: 20px 0;
+                }
+
+                .qr img {
+                    width: 280px;
+                    max-width: 80vw;
+                }
+
+                .instruction {
+                    font-size: 17px;
+                    line-height: 1.6;
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <div class="box">
+
+                <h1>🎲 Bot de Dados</h1>
+
+                <h2>📱 Conectar WhatsApp</h2>
+
+                <div class="qr">
+
+                    <img src="${qrAtual}" alt="QR Code">
+
+                </div>
+
+                <div class="instruction">
+
+                    <p>
+                        Abra o WhatsApp no celular.
+                    </p>
+
+                    <p>
+                        Vá em:
+                    </p>
+
+                    <strong>
+                        Configurações → Dispositivos conectados
+                    </strong>
+
+                    <p>
+                        Depois toque em
+                        <strong>Conectar dispositivo</strong>
+                        e escaneie o QR Code acima.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </body>
+
+        </html>
+    `);
 });
 
+// =====================================================
+// HEALTH CHECK
+// =====================================================
+
 app.get("/health", (req, res) => {
+
     res.status(200).json({
         status: "online",
-        bot: "bot-dados-whatsapp"
+        whatsapp: whatsappConectado
+            ? "connected"
+            : "waiting"
     });
 });
 
+// =====================================================
+// INICIAR SERVIDOR
+// =====================================================
+
 app.listen(PORT, () => {
+
     console.log(
-        `🌐 Servidor HTTP funcionando na porta ${PORT}`
+        `🌐 Servidor funcionando na porta ${PORT}`
     );
+
 });
 
 // =====================================================
@@ -54,17 +310,17 @@ function rolarDados(quantidade, lados) {
 
     for (let i = 0; i < quantidade; i++) {
 
-        const resultado =
-            crypto.randomInt(1, lados + 1);
+        resultados.push(
+            crypto.randomInt(1, lados + 1)
+        );
 
-        resultados.push(resultado);
     }
 
     return resultados;
 }
 
 // =====================================================
-// CONEXÃO COM WHATSAPP
+// CONEXÃO WHATSAPP
 // =====================================================
 
 let reconectando = false;
@@ -72,7 +328,7 @@ let reconectando = false;
 async function iniciarBot() {
 
     console.log(
-        "🔄 Iniciando conexão com o WhatsApp..."
+        "🔄 Iniciando WhatsApp..."
     );
 
     const { state, saveCreds } =
@@ -99,10 +355,11 @@ async function iniciarBot() {
         connectTimeoutMs: 60000,
 
         defaultQueryTimeoutMs: 60000
+
     });
 
     // =================================================
-    // SALVAR SESSÃO
+    // SALVAR CREDENCIAIS
     // =================================================
 
     sock.ev.on(
@@ -111,59 +368,85 @@ async function iniciarBot() {
     );
 
     // =================================================
-    // CONEXÃO
+    // ATUALIZAÇÃO DA CONEXÃO
     // =================================================
 
     sock.ev.on(
         "connection.update",
-        ({
+        async ({
             connection,
             lastDisconnect,
             qr
         }) => {
 
+            // -----------------------------------------
+            // NOVO QR
+            // -----------------------------------------
+
             if (qr) {
 
-                console.log("");
                 console.log(
-                    "===================================="
+                    "📱 Novo QR Code recebido."
                 );
-                console.log(
-                    "📱 QR CODE GERADO"
-                );
-                console.log(
-                    "===================================="
-                );
-                console.log(
-                    "Escaneie usando o WhatsApp."
-                );
-                console.log(
-                    "===================================="
-                );
-                console.log("");
+
+                try {
+
+                    qrAtual =
+                        await QRCode.toDataURL(qr);
+
+                    whatsappConectado = false;
+
+                    console.log(
+                        "✅ QR Code disponível na página web."
+                    );
+
+                } catch (erro) {
+
+                    console.error(
+                        "❌ Erro ao gerar QR:",
+                        erro
+                    );
+
+                }
+
             }
 
+            // -----------------------------------------
+            // CONECTADO
+            // -----------------------------------------
+
             if (connection === "open") {
+
+                whatsappConectado = true;
+
+                qrAtual = null;
 
                 reconectando = false;
 
                 console.log("");
                 console.log(
-                    "===================================="
+                    "================================="
                 );
                 console.log(
                     "✅ WHATSAPP CONECTADO!"
                 );
                 console.log(
-                    "===================================="
-                );
-                console.log(
                     "🎲 BOT DE DADOS ONLINE!"
                 );
+                console.log(
+                    "================================="
+                );
                 console.log("");
+
             }
 
+            // -----------------------------------------
+            // DESCONECTADO
+            // -----------------------------------------
+
             if (connection === "close") {
+
+                whatsappConectado = false;
 
                 const statusCode =
                     lastDisconnect
@@ -172,7 +455,7 @@ async function iniciarBot() {
                         ?.statusCode;
 
                 console.log(
-                    "⚠️ Conexão encerrada."
+                    "⚠️ WhatsApp desconectado."
                 );
 
                 console.log(
@@ -186,10 +469,11 @@ async function iniciarBot() {
                 ) {
 
                     console.log(
-                        "❌ WhatsApp foi desconectado."
+                        "❌ Sessão encerrada pelo usuário."
                     );
 
                     return;
+
                 }
 
                 if (reconectando) {
@@ -209,12 +493,14 @@ async function iniciarBot() {
                     iniciarBot();
 
                 }, 5000);
+
             }
+
         }
     );
 
     // =================================================
-    // MENSAGENS
+    // RECEBER MENSAGENS
     // =================================================
 
     sock.ev.on(
@@ -253,15 +539,12 @@ async function iniciarBot() {
                     );
 
                     // =================================================
-                    // COMANDOS ACEITOS
+                    // COMANDOS
                     //
                     // #d6
-                    // 3#d6
+                    // 5#d6
                     // #d20+5
-                    // #d20-2
-                    // 5#d20+3
                     // 5#d20-4
-                    // #d100+10
                     //
                     // =================================================
 
@@ -274,34 +557,29 @@ async function iniciarBot() {
                         continue;
                     }
 
-                    // Quantidade
                     const quantidade =
                         match[1]
                             ? Number(match[1])
                             : 1;
 
-                    // Tipo de dado
                     const lados =
                         Number(match[2]);
 
-                    // Sinal do modificador
                     const sinal =
                         match[3] || "+";
 
-                    // Valor do modificador
                     const valorModificador =
                         match[4]
                             ? Number(match[4])
                             : 0;
 
-                    // Aplicar sinal
                     const modificador =
                         sinal === "-"
                             ? -valorModificador
                             : valorModificador;
 
                     // =================================================
-                    // VALIDAÇÕES
+                    // VALIDAR QUANTIDADE
                     // =================================================
 
                     if (
@@ -320,6 +598,10 @@ async function iniciarBot() {
                         continue;
                     }
 
+                    // =================================================
+                    // VALIDAR DADO
+                    // =================================================
+
                     if (
                         !DADOS_PERMITIDOS.includes(
                             lados
@@ -336,6 +618,10 @@ async function iniciarBot() {
 
                         continue;
                     }
+
+                    // =================================================
+                    // VALIDAR MODIFICADOR
+                    // =================================================
 
                     if (
                         valorModificador >
@@ -363,7 +649,6 @@ async function iniciarBot() {
                             lados
                         );
 
-                    // Soma dos dados
                     const soma =
                         resultados.reduce(
                             (total, valor) =>
@@ -371,7 +656,6 @@ async function iniciarBot() {
                             0
                         );
 
-                    // Total final
                     const total =
                         soma + modificador;
 
@@ -382,27 +666,36 @@ async function iniciarBot() {
                     let resposta =
                         `🎲 ${quantidade}#d${lados}`;
 
-                    if (valorModificador !== 0) {
+                    if (
+                        valorModificador !== 0
+                    ) {
 
                         resposta +=
                             `${sinal}${valorModificador}`;
+
                     }
 
                     resposta +=
                         `\n\n${resultados.join(", ")}`;
 
-                    if (quantidade > 1) {
+                    if (
+                        quantidade > 1
+                    ) {
 
                         resposta +=
                             `\n\n📊 Soma: ${soma}`;
+
                     }
 
-                    if (valorModificador !== 0) {
+                    if (
+                        valorModificador !== 0
+                    ) {
 
                         resposta +=
                             `\n${sinal === "+"
                                 ? "➕"
                                 : "➖"} Modificador: ${sinal}${valorModificador}`;
+
                     }
 
                     resposta +=
@@ -419,10 +712,6 @@ async function iniciarBot() {
                         }
                     );
 
-                    // =================================================
-                    // LOG
-                    // =================================================
-
                     console.log(
                         `🎲 ${quantidade}#d${lados}${sinal}${valorModificador} → ${total}`
                     );
@@ -430,17 +719,20 @@ async function iniciarBot() {
                 } catch (erro) {
 
                     console.error(
-                        "❌ Erro:",
+                        "❌ Erro ao processar mensagem:",
                         erro
                     );
+
                 }
+
             }
+
         }
     );
 }
 
 // =====================================================
-// INICIAR BOT
+// INICIAR
 // =====================================================
 
 iniciarBot().catch((erro) => {
@@ -451,18 +743,5 @@ iniciarBot().catch((erro) => {
     );
 
     process.exit(1);
+
 });
-
-"qrcode": "^1.5.4"
-
-🎲 BOT DE DADOS
-
-WhatsApp
-┌──────────────┐
-│              │
-│   QR CODE    │
-│              │
-└──────────────┘
-
-Escaneie este QR Code
-pelo WhatsApp
