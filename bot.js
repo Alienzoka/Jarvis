@@ -534,11 +534,24 @@ async function iniciarBot() {
                             .trim()
                             .toLowerCase();
 
-                    console.log(
-                        `📩 ${comando}`
-                    );
+                    const comando =
+    texto
+        .trim()
+        .toLowerCase();
 
-                    // =================================================
+// =================================================
+// COMANDO DE DADOS
+// =================================================
+
+const match =
+    comando.match(
+        /^(?:(\d+)#)?d(6|12|20|100)(?:([+-])(\d+))?$/
+    );
+
+// Se não for comando de dado, ignora completamente
+if (!match) {
+    continue;
+} =================================================
                     // COMANDOS
                     //
                     // #d6
