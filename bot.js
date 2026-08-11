@@ -705,12 +705,20 @@ async function iniciarBot() {
                     // ENVIAR
                     // =================================================
 
-                    await sock.sendMessage(
-                        msg.key.remoteJid,
-                        {
-                            text: resposta
-                        }
-                    );
+              console.log("📤 Tentando enviar:", resposta);
+console.log("📍 Destino:", msg.key.remoteJid);
+
+await sock.sendMessage(
+    msg.key.remoteJid,
+    {
+        text: resposta
+    }
+);
+
+console.log("✅ Mensagem enviada!");
+                        
+                        
+                   
 
                     console.log(
                         `🎲 ${quantidade}#d${lados}${sinal}${valorModificador} → ${total}`
